@@ -30,6 +30,9 @@ import { PageService } from '../page/page.service'
 import { PostModel } from '../post/post.model'
 import { PostService } from '../post/post.service'
 
+
+const MAX_SIZE_IN_BYTES = parseInt(process.env.MAX_SIZE_IN_BYTES || '9990', 10)
+
 @Injectable()
 export class SearchService {
   private readonly logger = new Logger(SearchService.name)
@@ -162,7 +165,7 @@ export class SearchService {
         return Promise.resolve()
       }
       return model
-        .findById(objectID)
+        .findById(objectID.split('_')[0])
         .select('_id title created modified categoryId slug nid')
         .lean({
           getters: true,
@@ -198,6 +201,12 @@ export class SearchService {
   })
   @CronDescription('推送到 Algolia Search')
   @OnEvent(EventBusEvents.PushSearch)
+  @OnEvent(BusinessEvents.POST_CREATE)
+  @OnEvent(BusinessEvents.POST_UPDATE)
+  @OnEvent(BusinessEvents.POST_DELETE)
+  @OnEvent(BusinessEvents.NOTE_CREATE)
+  @OnEvent(BusinessEvents.NOTE_UPDATE)
+  @OnEvent(BusinessEvents.NOTE_DELETE)
   async pushAllToAlgoliaSearch() {
     const configs = await this.configs.waitForConfigReady()
     if (!configs.algoliaSearchOptions.enable || isDev) {
@@ -285,128 +294,42 @@ export class SearchService {
         }),
     ])
 
-    return combineDocuments
-      .flat()
-      .map((item) => adjustObjectSizeEfficiently(item))
-  }
-
-  @OnEvent(BusinessEvents.POST_CREATE)
-  @OnEvent(BusinessEvents.POST_UPDATE)
-  async onPostCreate(post: PostModel) {
-    const data = await this.postService.model.findById(post.id).lean()
-
-    if (!data) return
-
-    this.executeAlgoliaSearchOperationIfEnabled(async (index) => {
-      this.logger.log(
-        `detect post created or update, save to algolia, data id:${data.id}`,
-      )
-      await index.saveObject(
-        adjustObjectSizeEfficiently({
-          ...omit(data, '_id'),
-          objectID: data.id,
-          id: data.id,
-
-          type: 'post',
-        }),
-        {
-          autoGenerateObjectIDIfNotExist: false,
-        },
-      )
-      this.logger.log(`save to algolia success, id: ${data.id}`)
-    })
-  }
-
-  @OnEvent(BusinessEvents.NOTE_CREATE)
-  @OnEvent(BusinessEvents.NOTE_UPDATE)
-  async onNoteCreate(note: NoteModel) {
-    const data = await this.noteService.model.findById(note.id).lean()
-
-    if (!data) return
-
-    this.executeAlgoliaSearchOperationIfEnabled(async (index) => {
-      this.logger.log(
-        `detect post created or update, save to algolia, data id:${data.id}`,
-      )
-      await index.saveObject(
-        adjustObjectSizeEfficiently({
-          ...omit(data, '_id'),
-          objectID: data.id,
-
-          id: data.id,
-
-          type: 'note',
-        }),
-        {
-          autoGenerateObjectIDIfNotExist: false,
-        },
-      )
-      this.logger.log(`save to algolia success, id: ${data.id}`)
-    })
-  }
-
-  @OnEvent(BusinessEvents.POST_DELETE)
-  @OnEvent(BusinessEvents.NOTE_DELETE)
-  async onPostDelete({ data: id }: { data: string }) {
-    await this.executeAlgoliaSearchOperationIfEnabled(async (index) => {
-      this.logger.log(`detect data delete, save to algolia, data id: ${id}`)
-
-      await index.deleteObject(id)
-    })
-  }
-
-  private async executeAlgoliaSearchOperationIfEnabled(
-    caller: (index: SearchIndex) => Promise<any>,
-  ) {
-    const configs = await this.configs.waitForConfigReady()
-    if (!configs.algoliaSearchOptions.enable || isDev) {
-      return
+    function canBeDecoded(textEncoded: Uint8Array): boolean {
+      try {
+        new TextDecoder('utf-8', { fatal: true }).decode(textEncoded);
+        return true
+      } catch (e) {
+        return false;
+      }
     }
-    const index = await this.getAlgoliaSearchIndex()
-    return caller(index)
+
+    const combineDocumentsSplited: any[] = []
+    combineDocuments.flat().forEach((item) => {
+      const objectToAdjust = JSON.parse(JSON.stringify(item))
+      objectToAdjust.text = objectToAdjust.text.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+      objectToAdjust.text = objectToAdjust.text.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+      const encodedSize = new TextEncoder().encode(JSON.stringify(objectToAdjust)).length;
+      if (encodedSize <= MAX_SIZE_IN_BYTES) {
+        objectToAdjust.objectID = `${objectToAdjust.objectID}_0`;
+        combineDocumentsSplited.push(objectToAdjust);
+      } else {
+        const textEncoded = new TextEncoder().encode(objectToAdjust.text);
+        const textSize = textEncoded.length;
+        const n = Math.ceil(textSize / (MAX_SIZE_IN_BYTES - encodedSize + textSize));
+        var start = 0;
+        for (let i = 0; i < n; i++) {
+          const newObject = JSON.parse(JSON.stringify(objectToAdjust));
+          var end = start + Math.floor(textSize / n);
+          while (!canBeDecoded(textEncoded.slice(start, end))) {
+            end--;
+          }
+          newObject.text = new TextDecoder('utf-8').decode(textEncoded.slice(start, end));
+          newObject.objectID = `${newObject.objectID}_${i}`;
+          combineDocumentsSplited.push(newObject);
+          start = end;
+        }
+      }
+    });
+    return combineDocumentsSplited;
   }
-}
-
-const MAX_SIZE_IN_BYTES = 100_000
-function adjustObjectSizeEfficiently<T extends { text: string }>(
-  originalObject: T,
-  maxSizeInBytes: number = MAX_SIZE_IN_BYTES,
-): any {
-  // 克隆原始对象以避免修改引用
-  const objectToAdjust = JSON.parse(JSON.stringify(originalObject))
-  const text = objectToAdjust.text
-
-  let low = 0
-  let high = text.length
-  let mid = 0
-
-  while (low <= high) {
-    mid = Math.floor((low + high) / 2)
-    objectToAdjust.text = text.slice(0, mid)
-    const currentSize = new TextEncoder().encode(
-      JSON.stringify(objectToAdjust),
-    ).length
-
-    if (currentSize > maxSizeInBytes) {
-      // 如果当前大小超过限制，减少 text 长度
-      high = mid - 1
-    } else if (currentSize < maxSizeInBytes) {
-      // 如果当前大小未达限制，尝试增加text长度
-      low = mid + 1
-    } else {
-      // 精确匹配，退出循环
-      break
-    }
-  }
-
-  // 微调，确保不超过最大大小
-  while (
-    new TextEncoder().encode(JSON.stringify(objectToAdjust)).length >
-    maxSizeInBytes
-  ) {
-    objectToAdjust.text = objectToAdjust.text.slice(0, -1)
-  }
-
-  // 返回调整后的对象
-  return objectToAdjust as T
 }
