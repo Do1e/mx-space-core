@@ -3,7 +3,7 @@ import { MongoClient } from 'mongodb'
 import type {
   BetterAuthOptions,
   BetterAuthPlugin,
-} from '@mx-space/complied/auth'
+} from '@mx-space/compiled/auth'
 import type { ServerResponse } from 'node:http'
 
 import {
@@ -11,7 +11,7 @@ import {
   betterAuth,
   mongodbAdapter,
   toNodeHandler,
-} from '@mx-space/complied/auth'
+} from '@mx-space/compiled/auth'
 
 import { API_VERSION, CROSS_DOMAIN, MONGO_DB } from '~/app.config'
 import { SECURITY } from '~/app.config.test'
@@ -150,8 +150,9 @@ export async function CreateAuth(
       const handler = toNodeHandler(auth)(
         Object.assign(clonedRequest, req, {
           url: req.originalUrl,
+
           // https://github.com/Bekacru/better-call/blob/main/src/adapter/node.ts
-          connection: Object.assign(req.connection, {
+          socket: Object.assign(req.socket, {
             encrypted: isDev ? false : true,
           }),
         }),
