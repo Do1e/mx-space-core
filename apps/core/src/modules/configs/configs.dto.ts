@@ -10,6 +10,7 @@ import {
   IsOptional,
   IsString,
   IsUrl,
+  Min,
   ValidateNested,
 } from 'class-validator'
 import { JSONSchema } from 'class-validator-jsonschema'
@@ -227,6 +228,15 @@ export class AlgoliaSearchOptionsDto {
   @IsOptional()
   @JSONSchemaPlainField('IndexName')
   indexName?: string
+
+  @IsInt()
+  @Min(100)
+  @IsOptional()
+  @JSONSchemaPlainField('最大文档大小', {
+    description:
+      'Algolia 文档大小限制，单位为字节，免费版本为 10K, 填写为 10000',
+  })
+  maxTruncateSize?: number
 }
 
 @JSONSchema({ title: '后台附加设置' })

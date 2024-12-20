@@ -1,10 +1,8 @@
 import algoliasearch from 'algoliasearch'
-import { omit } from 'lodash'
 import removeMdCodeblock from 'remove-md-codeblock'
 import type { SearchResponse } from '@algolia/client-search'
 import type { SearchDto } from '~/modules/search/search.dto'
 import type { Pagination } from '~/shared/interface/paginator.interface'
-import type { SearchIndex } from 'algoliasearch'
 
 import {
   BadRequestException,
@@ -24,14 +22,14 @@ import { DatabaseService } from '~/processors/database/database.service'
 import { transformDataToPaginate } from '~/transformers/paginate.transformer'
 
 import { ConfigsService } from '../configs/configs.service'
-import { NoteModel } from '../note/note.model'
 import { NoteService } from '../note/note.service'
 import { PageService } from '../page/page.service'
-import { PostModel } from '../post/post.model'
 import { PostService } from '../post/post.service'
 
-
-const MAX_SIZE_IN_BYTES = parseInt(process.env.MAX_SIZE_IN_BYTES || '9990', 10)
+const MAX_SIZE_IN_BYTES = Number.parseInt(
+  process.env.MAX_SIZE_IN_BYTES || '9990',
+  10,
+)
 
 @Injectable()
 export class SearchService {
@@ -234,6 +232,15 @@ export class SearchService {
     }
   }
 
+  private canBeDecoded(textEncoded: Uint8Array): boolean {
+    try {
+      new TextDecoder('utf-8', { fatal: true }).decode(textEncoded)
+      return true
+    } catch {
+      return false
+    }
+  }
+
   async buildAlgoliaIndexData() {
     const combineDocuments = await Promise.all([
       this.postService.model
@@ -294,42 +301,47 @@ export class SearchService {
         }),
     ])
 
-    function canBeDecoded(textEncoded: Uint8Array): boolean {
-      try {
-        new TextDecoder('utf-8', { fatal: true }).decode(textEncoded);
-        return true
-      } catch (e) {
-        return false;
-      }
-    }
+    // const { algoliaSearchOptions } = await this.configs.waitForConfigReady()
 
     const combineDocumentsSplited: any[] = []
     combineDocuments.flat().forEach((item) => {
       const objectToAdjust = JSON.parse(JSON.stringify(item))
-      objectToAdjust.text = objectToAdjust.text.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-      objectToAdjust.text = objectToAdjust.text.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-      const encodedSize = new TextEncoder().encode(JSON.stringify(objectToAdjust)).length;
+      objectToAdjust.text = objectToAdjust.text.replaceAll(
+        /<style[^>]*>[\s\S]*?<\/style>/gi,
+        '',
+      )
+      objectToAdjust.text = objectToAdjust.text.replaceAll(
+        /<script[^>]*>[\s\S]*?<\/script>/gi,
+        '',
+      )
+      const encodedSize = new TextEncoder().encode(
+        JSON.stringify(objectToAdjust),
+      ).length
       if (encodedSize <= MAX_SIZE_IN_BYTES) {
-        objectToAdjust.objectID = `${objectToAdjust.objectID}_0`;
-        combineDocumentsSplited.push(objectToAdjust);
+        objectToAdjust.objectID = `${objectToAdjust.objectID}_0`
+        combineDocumentsSplited.push(objectToAdjust)
       } else {
-        const textEncoded = new TextEncoder().encode(objectToAdjust.text);
-        const textSize = textEncoded.length;
-        const n = Math.ceil(textSize / (MAX_SIZE_IN_BYTES - encodedSize + textSize));
-        var start = 0;
+        const textEncoded = new TextEncoder().encode(objectToAdjust.text)
+        const textSize = textEncoded.length
+        const n = Math.ceil(
+          textSize / (MAX_SIZE_IN_BYTES - encodedSize + textSize),
+        )
+        let start = 0
         for (let i = 0; i < n; i++) {
-          const newObject = JSON.parse(JSON.stringify(objectToAdjust));
-          var end = start + Math.floor(textSize / n);
-          while (!canBeDecoded(textEncoded.slice(start, end))) {
-            end--;
+          const newObject = JSON.parse(JSON.stringify(objectToAdjust))
+          let end = start + Math.floor(textSize / n)
+          while (!this.canBeDecoded(textEncoded.slice(start, end))) {
+            end--
           }
-          newObject.text = new TextDecoder('utf-8').decode(textEncoded.slice(start, end));
-          newObject.objectID = `${newObject.objectID}_${i}`;
-          combineDocumentsSplited.push(newObject);
-          start = end;
+          newObject.text = new TextDecoder('utf-8').decode(
+            textEncoded.slice(start, end),
+          )
+          newObject.objectID = `${newObject.objectID}_${i}`
+          combineDocumentsSplited.push(newObject)
+          start = end
         }
       }
-    });
-    return combineDocumentsSplited;
+    })
+    return combineDocumentsSplited
   }
 }
