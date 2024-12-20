@@ -26,11 +26,6 @@ import { NoteService } from '../note/note.service'
 import { PageService } from '../page/page.service'
 import { PostService } from '../post/post.service'
 
-const MAX_SIZE_IN_BYTES = Number.parseInt(
-  process.env.MAX_SIZE_IN_BYTES || '9990',
-  10,
-)
-
 @Injectable()
 export class SearchService {
   private readonly logger = new Logger(SearchService.name)
@@ -301,7 +296,7 @@ export class SearchService {
         }),
     ])
 
-    // const { algoliaSearchOptions } = await this.configs.waitForConfigReady()
+    const { algoliaSearchOptions } = await this.configs.waitForConfigReady()
 
     const combineDocumentsSplited: any[] = []
     combineDocuments.flat().forEach((item) => {
@@ -317,14 +312,15 @@ export class SearchService {
       const encodedSize = new TextEncoder().encode(
         JSON.stringify(objectToAdjust),
       ).length
-      if (encodedSize <= MAX_SIZE_IN_BYTES) {
+      if (encodedSize <= algoliaSearchOptions.maxTruncateSize) {
         objectToAdjust.objectID = `${objectToAdjust.objectID}_0`
         combineDocumentsSplited.push(objectToAdjust)
       } else {
         const textEncoded = new TextEncoder().encode(objectToAdjust.text)
         const textSize = textEncoded.length
         const n = Math.ceil(
-          textSize / (MAX_SIZE_IN_BYTES - encodedSize + textSize),
+          textSize /
+            (algoliaSearchOptions.maxTruncateSize - encodedSize + textSize),
         )
         let start = 0
         for (let i = 0; i < n; i++) {
