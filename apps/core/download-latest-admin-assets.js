@@ -12,7 +12,7 @@ const endpoint = `https://api.github.com/repos/${repo}/releases/tags/v${version}
   const downloadUrl = json.assets.find(
     (asset) => asset.name === 'release.zip',
   ).browser_download_url
-  const buffer = await fetch(downloadUrl).then((res) => res.arrayBuffer())
+  const buffer = await fetch(`https://ghproxy.cn/${downloadUrl}`).then((res) => res.arrayBuffer())
   appendFileSync(join(process.cwd(), 'admin-release.zip'), Buffer.from(buffer))
 
   await $`ls -lh`
