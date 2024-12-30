@@ -10,6 +10,7 @@ import { CacheKeys } from '~/constants/cache.constant'
 import { escapeXml } from '~/utils/tool.util'
 
 import { AggregateService } from '../aggregate/aggregate.service'
+import { AiSummaryService } from '../ai/ai-summary/ai-summary.service'
 import { ConfigsService } from '../configs/configs.service'
 import { MarkdownService } from '../markdown/markdown.service'
 import { UserService } from '../user/user.service'
@@ -21,6 +22,7 @@ export class FeedController {
     private readonly configs: ConfigsService,
     private readonly userService: UserService,
     private readonly markdownService: MarkdownService,
+    private readonly aiSummaryService: AiSummaryService,
   ) {}
 
   @Get(['/feed', '/atom.xml'])
@@ -53,13 +55,20 @@ export class FeedController {
 ${await Promise.all(
   data.map(async (item) => {
     const renderResult = await this.markdownService.renderArticle(item.id)
+    const { summaries } = await this.aiSummaryService.getSummariesByRefId(
+      item.id,
+    )
+    let summary = ''
+    if (summaries.length) {
+      summary = summaries[0].summary
+    } else {
+      summary = RemoveMarkdown(renderResult.document.text).slice(0, 200)
+    }
     return `<item>
     <title>${escapeXml(item.title)}</title>
     <link>${xss(item.link)}</link>
     <pubDate>${item.created!.toUTCString()}</pubDate>
-    <description>${escapeXml(
-      xss(RemoveMarkdown(renderResult.document.text).slice(0, 50)),
-    )}</description>
+    <description>${escapeXml(xss(summary))}</description>
     <content:encoded><![CDATA[
       ${`<blockquote>该渲染由 marked 生成，可能存在排版问题，最佳体验请前往：<a href='${xss(
         item.link,
