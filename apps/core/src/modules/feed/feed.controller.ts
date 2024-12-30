@@ -60,7 +60,7 @@ ${await Promise.all(
     )
     let summary = ''
     if (summaries.length) {
-      summary = summaries[0].summary
+      summary = summaries[summaries.length - 1].summary
     } else {
       summary = RemoveMarkdown(renderResult.document.text).slice(0, 200)
     }
