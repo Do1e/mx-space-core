@@ -33,7 +33,7 @@
     "cross-env": "7.0.3",
     "eslint": "^9.17.0",
     "eslint-plugin-unused-imports": "4.1.4",
-    "lint-staged": "15.2.11",
+    "lint-staged": "15.3.0",
     "prettier": "3.4.2",
     "rimraf": "6.0.1",
     "simple-git-hooks": "2.11.1",
@@ -55,10 +55,10 @@
   "issues": "https://github.com/mx-space/core/issues",
   "resolutions": {
     "get-pixels@^3>request": "./external/request",
-    "mongodb": "6.11.0",
+    "mongodb": "6.12.0",
     "pino": "./external/pino",
     "semver": "7.6.3",
-    "typescript": "5.6.3",
+    "typescript": "5.7.2",
     "whatwg-url": "14.1.0"
   }
 }
