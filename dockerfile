@@ -7,6 +7,7 @@ RUN pnpm install
 RUN pnpm bundle
 RUN mv apps/core/out ./out
 RUN node apps/core/download-latest-admin-assets.js
+RUN node apps/core/update-class.js
 
 FROM node:22-alpine
 
