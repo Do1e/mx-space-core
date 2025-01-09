@@ -48,8 +48,8 @@
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
-      "eslint --cache --fix",
-      "prettier --ignore-path ./.prettierignore --write "
+      "eslint --ignore-pattern 'apps/core/update-class.js' --cache --fix",
+      "prettier --ignore-path ./.prettierignore apps/core/update-class.js --write "
     ]
   },
   "issues": "https://github.com/mx-space/core/issues",
