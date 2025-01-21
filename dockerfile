@@ -12,9 +12,11 @@ RUN node apps/core/update-class.js
 
 FROM node:22-alpine
 
-RUN apk add zip unzip mongodb-tools bash fish rsync jq curl openrc --no-cache
+RUN sed -i 's#https\?://dl-cdn.alpinelinux.org/alpine#https://mirror.nju.edu.cn/alpine#g' /etc/apk/repositories
+RUN apk add zip unzip mongodb-tools bash fish rsync jq curl openrc proxychains-ng --no-cache
 
 RUN curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o /usr/local/bin/cloudflared && chmod +x /usr/local/bin/cloudflared
+RUN echo -e '[ProxyList]\nhttp 172.17.0.1 22444\nsocks5 172.17.0.1 22445' > /etc/proxychains/proxychains.conf
 
 WORKDIR /app
 COPY --from=builder /app/out .

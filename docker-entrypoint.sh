@@ -35,7 +35,7 @@ set_value() {
     command_args+=" $CMD_ARG$(get_cmd_value "$CMD_ARG" ${@:3})"
     return
   fi
-  
+
   # if environment variable is preset, use it
   if [ -n "${!VAR_NAME}" ]; then
     command_args+=" $CMD_ARG${!VAR_NAME}"
@@ -71,7 +71,7 @@ set_switch() {
         command_args+=" $CMD_ARG"
         return
     fi
-  
+
     # if environment variable is preset, use it
     if [ -n "${!VAR_NAME}" ]; then
       if [ "${!VAR_NAME}" = "true" ]; then
@@ -143,7 +143,7 @@ declare -A valueMap=(
   [REDIS_PORT]="value,--redis_port=,6379"
   [REDIS_PASSWORD]="value,--redis_password=,@@NULL@@"
   [DISABLE_CACHE]="switch,--disable_cache,false"
- 
+
   # JWT
   [JWT_SECRET]="value,--jwt_secret=,@@NULL@@"
   [JWT_EXPIRE]="value,--jwt_expire=,@@NULL@@"
@@ -204,7 +204,7 @@ echo "Cluster: $(get_boolean_str $(is_in_cmd "--cluster" $command_args))"
 echo "CF Zero Trust Token: $(get_cmd_value "--cf_zero_trust_token=" $command_args)"
 echo "============================================"
 
-command="node index.js $command_args"
+command="proxychains node index.js $command_args"
 
 # 根据环境变量决定是否启动 cloudflared
 if [ "$ENABLE_CLOUDFLARED" = "true" ]; then
