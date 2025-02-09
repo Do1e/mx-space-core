@@ -2,7 +2,8 @@ FROM node:22-alpine as builder
 WORKDIR /app
 RUN sed -i 's#https\?://dl-cdn.alpinelinux.org/alpine#https://mirror.nju.edu.cn/alpine#g' /etc/apk/repositories
 RUN apk add git make g++ alpine-sdk python3 py3-pip unzip
-RUN npm i -g pnpm
+RUN corepack enable
+RUN corepack prepare --activate
 COPY . .
 RUN pnpm install
 RUN pnpm bundle
