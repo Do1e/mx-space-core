@@ -206,6 +206,20 @@ export class BaiduSearchOptionsDto {
   token?: string
 }
 
+@JSONSchema({ title: 'Bing推送设定' })
+export class BingSearchOptionsDto {
+  @IsOptional()
+  @IsBoolean()
+  @JSONSchemaToggleField('开启推送')
+  enable?: boolean
+
+  @IsOptional()
+  @IsString()
+  @SecretField
+  @JSONSchemaPasswordField('Bing API密钥')
+  token?: string
+}
+
 @JSONSchema({ title: 'Algolia Search' })
 export class AlgoliaSearchOptionsDto {
   @IsBoolean()
