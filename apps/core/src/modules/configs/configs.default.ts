@@ -19,6 +19,7 @@ export const generateDefaultConfig: () => IConfig = () => ({
 
     user: '',
     pass: '',
+    from: '',
     options: {
       host: '',
       port: 465,
@@ -27,6 +28,9 @@ export const generateDefaultConfig: () => IConfig = () => ({
   },
   commentOptions: {
     antiSpam: false,
+    aiReview: false,
+    aiReviewType: 'binary',
+    aiReviewThreshold: 5,
     disableComment: false,
     blockIps: [],
     disableNoChinese: false,

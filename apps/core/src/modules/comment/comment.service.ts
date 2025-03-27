@@ -33,6 +33,7 @@ import { InjectModel } from '~/transformers/model.transformer'
 import { scheduleManager } from '~/utils/schedule.util'
 import { getAvatar, hasChinese } from '~/utils/tool.util'
 
+import { AiService } from '../ai/ai.service'
 import { ConfigsService } from '../configs/configs.service'
 import { ReaderModel } from '../reader/reader.model'
 import { ReaderService } from '../reader/reader.service'
@@ -62,6 +63,8 @@ export class CommentService implements OnModuleInit {
     private readonly mailService: EmailService,
 
     private readonly configsService: ConfigsService,
+    @Inject(forwardRef(() => AiService))
+    private readonly aiService: AiService,
     @Inject(forwardRef(() => ServerlessService))
     private readonly serverlessService: ServerlessService,
     private readonly eventManager: EventManagerService,
@@ -146,6 +149,24 @@ export class CommentService implements OnModuleInit {
         return true
       }
 
+      if (commentOptions.aiReview) {
+        const openai = await this.aiService.getOpenAiChain()
+        const { aiReviewType, aiReviewThreshold } = commentOptions
+        const runnable = openai
+
+        const prompt =
+          aiReviewType === 'score'
+            ? 'Check the comment and return a risk score directly. Higher means more risky (1-10). Outputs should only be a number'
+            : 'Check if the comment is spam or not. Outputs should be true or false(Lowercase)'
+
+        const result = (await runnable.invoke([`${prompt}:${doc.text}`]))
+          .content
+
+        if (aiReviewType === 'score') {
+          return (result as any) > aiReviewThreshold
+        }
+        return result === 'true'
+      }
       return false
     })()
     if (res) {
@@ -525,9 +546,9 @@ export class CommentService implements OnModuleInit {
     const location =
       `${result.countryName || ''}${
         result.regionName && result.regionName !== result.cityName
-          ? `${result.regionName}`
+          ? String(result.regionName)
           : ''
-      }${result.cityName ? `${result.cityName}` : ''}` || undefined
+      }${result.cityName ? String(result.cityName) : ''}` || undefined
 
     if (location) await this.commentModel.updateOne({ _id: id }, { location })
   }
@@ -574,13 +595,13 @@ export class CommentService implements OnModuleInit {
     type: CommentReplyMailType
   }) {
     const { seo, mailOptions } = await this.configsService.waitForConfigReady()
-    const { user } = mailOptions
-    const from = `"${seo.title || 'Mx Space'}" <${user}>`
+    const { from, user } = mailOptions
+    const sendfrom = `"${seo.title || 'Mx Space'}" <${from || user}>`
 
     source.ip ??= ''
     if (type === CommentReplyMailType.Guest) {
       const options = {
-        from,
+        from: sendfrom,
         subject: `[${seo.title || 'Mx Space'}] 主人给你了新的回复呐`,
         to,
         html: render(
@@ -598,7 +619,7 @@ export class CommentService implements OnModuleInit {
       await this.mailService.send(options)
     } else {
       const options = {
-        from,
+        from: sendfrom,
         subject: `[${seo.title || 'Mx Space'}] 有新回复了耶~`,
         to,
         html: render(
