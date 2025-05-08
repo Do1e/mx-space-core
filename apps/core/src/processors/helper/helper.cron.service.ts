@@ -132,12 +132,15 @@ export class CronService {
         return
       }
 
-      const pushUrls = await this.aggregateService.getSiteMapContent()
+      // [TODO] 一段时间后修改为提交前10条
+      let pushUrls = await this.aggregateService.getSiteMapContent()
+      pushUrls = [...pushUrls].sort(() => Math.random() - 0.5).slice(0, 10)
       const urls = pushUrls
         .map((item) => {
           return item.url
         })
         .join('\n')
+      this.logger.log(`随机抽取了：\n${urls}`)
 
       try {
         const res = await this.http.axiosRef.post(
