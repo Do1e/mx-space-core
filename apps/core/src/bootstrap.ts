@@ -6,6 +6,7 @@ import type { LogLevel } from '@nestjs/common'
 import type { NestFastifyApplication } from '@nestjs/platform-fastify'
 
 import { Logger } from '@innei/pretty-logger-nestjs'
+import { chalk } from '@mx-space/compiled'
 import { NestFactory } from '@nestjs/core'
 
 import { CROSS_DOMAIN, DEBUG_MODE, PORT } from './app.config'
@@ -42,6 +43,7 @@ export async function bootstrap() {
 
   const allowAllCors: FastifyCorsOptions = {
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     origin: (origin, callback) => callback(null, origin || ''),
   }
   // Origin 如果不是数组就全部允许跨域
@@ -69,6 +71,7 @@ export async function bootstrap() {
             credentials: true,
             preflightContinue: false,
             optionsSuccessStatus: 204,
+            methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
           }
         : allowAllCors,
   )

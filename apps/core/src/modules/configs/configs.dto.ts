@@ -150,7 +150,7 @@ export class CommentOptionsDto {
       ],
     },
   })
-  aiReviewType: string
+  aiReviewType: 'binary' | 'score'
 
   @IsInt()
   @Transform(({ value: val }) => Number.parseInt(val))
@@ -446,6 +446,13 @@ export class AIDto {
       '此选项开启后，将会在文章发布后自动生成摘要，需要开启上面的选项，否则无效',
   })
   enableAutoGenerateSummary: boolean
+
+  @IsBoolean()
+  @IsOptional()
+  @JSONSchemaToggleField('开启 AI 深度阅读', {
+    description: '是否开启调用 AI 去生成深度阅读',
+  })
+  enableDeepReading: boolean
 
   @IsString()
   @IsOptional()

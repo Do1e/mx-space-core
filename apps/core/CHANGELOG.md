@@ -1,5 +1,36 @@
 # CHANGELOG
 
+# [8.3.0](https://github.com/mx-space/core/compare/v8.2.0...v8.3.0) (2025-05-06)
+
+
+### Features
+
+* **ai:** add deep reading model and controller method ([8a5048f](https://github.com/mx-space/core/commit/8a5048f06797e6aebfada3c9e8d592a86051aedd))
+* **ai:** introduce deep reading functionality and refactor AI module ([c385c58](https://github.com/mx-space/core/commit/c385c5894357bde8ee1083526ef74dacdb4eb811))
+* **ci:** add custom action for MongoDB and Redis setup ([c657e9a](https://github.com/mx-space/core/commit/c657e9a80aa8eb49b54482c82ff70a869385386a))
+* **ci:** add custom Node.js and pnpm setup action ([5077535](https://github.com/mx-space/core/commit/5077535eda3b832757e25c5c66e9b6dde09541c3))
+
+
+
+# [8.2.0](https://github.com/mx-space/core/compare/v8.1.2...v8.2.0) (2025-05-05)
+
+
+### Bug Fixes
+
+* **comment:** refine AI evaluation method and update comment options ([f855521](https://github.com/mx-space/core/commit/f8555216b6bc2260b913328821511e0688fbede3))
+
+
+### Features
+
+* implement AI-based comment evaluation in CommentService ([d2956f3](https://github.com/mx-space/core/commit/d2956f33981ca58659f153393c1b304548233b31))
+* update ai integration ([#2422](https://github.com/mx-space/core/issues/2422)) ([46704d2](https://github.com/mx-space/core/commit/46704d24986181009271c8fda5fb93e4b21ac01c))
+
+
+
+## [8.1.2](https://github.com/mx-space/core/compare/v8.1.1...v8.1.2) (2025-05-05)
+
+
+
 ## [8.1.1](https://github.com/mx-space/core/compare/v8.1.0...v8.1.1) (2025-04-06)
 
 

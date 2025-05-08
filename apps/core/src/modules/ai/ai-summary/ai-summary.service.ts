@@ -1,7 +1,7 @@
-import { JsonOutputFunctionsParser } from 'langchain/output_parsers'
 import removeMdCodeblock from 'remove-md-codeblock'
 import type { PagerDto } from '~/shared/dto/pager.dto'
 
+import { JsonOutputToolsParser } from '@langchain/core/output_parsers/openai_tools'
 import { Injectable, Logger } from '@nestjs/common'
 import { OnEvent } from '@nestjs/event-emitter'
 
@@ -57,33 +57,42 @@ export class AiSummaryService {
       throw new BizException(ErrorCodeEnum.ContentNotFoundCantProcess)
     }
 
-    const parser = new JsonOutputFunctionsParser()
+    const parser = new JsonOutputToolsParser()
 
     const runnable = openai
       .bind({
-        functions: [
+        tools: [
           {
-            name: 'extractor',
-            parameters: {
-              type: 'object',
-              properties: {
-                summary: {
-                  type: 'string',
-                  description: `The summary of the input text in the ${LANGUAGE_CODE_TO_NAME[lang] || LANGUAGE_CODE_TO_NAME[DEFAULT_SUMMARY_LANG]}, and the length of the summary is less than 150 words.`,
+            type: 'function',
+            function: {
+              name: 'extractor',
+              description: `Extract the summary of the input text in the ${LANGUAGE_CODE_TO_NAME[lang] || LANGUAGE_CODE_TO_NAME[DEFAULT_SUMMARY_LANG]}, and the length of the summary is less than 150 words.`,
+              parameters: {
+                type: 'object',
+                properties: {
+                  summary: {
+                    type: 'string',
+                    description: `The summary of the input text in the ${LANGUAGE_CODE_TO_NAME[lang] || LANGUAGE_CODE_TO_NAME[DEFAULT_SUMMARY_LANG]}, and the length of the summary is less than 150 words.`,
+                  },
                 },
+                required: ['summary'],
               },
-              required: ['summary'],
             },
           },
         ],
-        function_call: { name: 'extractor' },
+
+        tool_choice: { type: 'function', function: { name: 'extractor' } },
       })
       .pipe(parser)
-    const result = await runnable.invoke([
+    const result = (await runnable.invoke([
       this.serializeText(article.document.text),
-    ])
+    ])) as any[]
 
-    return (result as any).summary
+    if (result.length === 0) {
+      return {}
+    }
+
+    return result[0]?.args?.summary
   }
   async generateSummaryByOpenAI(articleId: string, lang: string) {
     const {
@@ -104,11 +113,11 @@ export class AiSummaryService {
     }
 
     const taskId = `ai:summary:${articleId}:${lang}`
+    const redis = this.redisService.getClient()
     try {
       if (this.cachedTaskId2AiPromise.has(taskId)) {
         return this.cachedTaskId2AiPromise.get(taskId)
       }
-      const redis = this.redisService.getClient()
 
       const isProcessing = await redis.get(taskId)
 
@@ -131,8 +140,6 @@ export class AiSummaryService {
 
         const summary = await this.summaryChain(id, lang)
 
-        await redis.del(taskId)
-
         const contentMd5 = md5(text)
 
         const doc = await this.aiSummaryModel.create({
@@ -152,6 +159,7 @@ export class AiSummaryService {
       throw new BizException(ErrorCodeEnum.AIException, error.message)
     } finally {
       this.cachedTaskId2AiPromise.delete(taskId)
+      await redis.del(taskId)
     }
   }
 
