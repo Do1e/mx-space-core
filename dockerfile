@@ -1,4 +1,6 @@
 FROM node:22-alpine as builder
+ENV MONGOMS_DISABLE_POSTINSTALL=1
+ENV REDISMS_DISABLE_POSTINSTALL=1
 WORKDIR /app
 RUN sed -i 's#https\?://dl-cdn.alpinelinux.org/alpine#https://mirror.nju.edu.cn/alpine#g' /etc/apk/repositories
 RUN apk add git make g++ alpine-sdk python3 py3-pip unzip
