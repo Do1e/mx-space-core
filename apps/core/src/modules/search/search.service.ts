@@ -57,7 +57,7 @@ export class SearchService {
           $or: [{ title: { $in: keywordArr } }, { text: { $in: keywordArr } }],
           $and: [
             { password: { $not: null } },
-            { hide: { $in: showHidden ? [false, true] : [false] } },
+            { isPublished: { $in: showHidden ? [false, true] : [true] } },
             {
               $or: [
                 { publicAt: { $not: null } },
@@ -271,7 +271,7 @@ export class SearchService {
       this.noteService.model
         .find(
           {
-            hide: false,
+            isPublished: true,
             $or: [
               { password: undefined },
               { password: null },
