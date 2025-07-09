@@ -60,7 +60,7 @@ ${await Promise.all(
     )
     let summary = ''
     if (summaries.length) {
-      summary = `下述摘要由AI生成，请注意鉴别：${summaries.at(-1).summary}`
+      summary = `下述摘要由AI生成，请注意鉴别：${summaries[summaries.length - 1].summary}`
     } else {
       summary = RemoveMarkdown(renderResult.document.text).slice(0, 200)
     }
