@@ -60,7 +60,7 @@ ${await Promise.all(
     )
     let summary = ''
     if (summaries.length) {
-      summary = `下述摘要由AI生成，请注意鉴别：${summaries[summaries.length - 1].summary}`
+      summary = `下述摘要由AI生成，请注意鉴别：${summaries.at(-1).summary}`
     } else {
       summary = RemoveMarkdown(renderResult.document.text).slice(0, 200)
     }
@@ -69,16 +69,6 @@ ${await Promise.all(
     <link>${xss(item.link)}</link>
     <pubDate>${item.created!.toUTCString()}</pubDate>
     <description>${escapeXml(xss(summary))}</description>
-    <content:encoded><![CDATA[
-      ${`<blockquote>该渲染由 marked 生成，可能存在排版问题，最佳体验请前往：<a href='${xss(
-        item.link,
-      )}'>${xss(item.link)}</a></blockquote>
-      ${renderResult.html}
-      <p style='text-align: right'>
-      <a href='${`${xss(item.link)}#comments`}'>看完了？说点什么呢</a>
-      </p>`}
-    ]]>
-    </content:encoded>
   <guid isPermaLink="false">${item.id}</guid>
   <category>${renderResult.type}</category>
 ${
