@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common'
-
 import { AggregateModule } from '../aggregate/aggregate.module'
 import { AiSummaryService } from '../ai/ai-summary/ai-summary.service'
 import { AiModule } from '../ai/ai.module'

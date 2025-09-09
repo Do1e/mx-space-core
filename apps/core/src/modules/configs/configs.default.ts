@@ -1,7 +1,5 @@
 import type { IConfig } from './configs.interface'
 
-import { DEMO_MODE } from '~/app.config'
-
 export const generateDefaultConfig: () => IConfig = () => ({
   seo: {
     title: '我的小世界呀',
@@ -47,7 +45,7 @@ export const generateDefaultConfig: () => IConfig = () => ({
   },
   friendLinkOptions: { allowApply: true, allowSubPath: false },
   backupOptions: {
-    enable: DEMO_MODE ? false : true,
+    enable: true,
     endpoint: null!,
     region: null!,
     bucket: null!,
@@ -87,7 +85,7 @@ export const generateDefaultConfig: () => IConfig = () => ({
     enableAutoGenerateSummary: false,
     enableSummary: false,
     openAiEndpoint: '',
-    openAiPreferredModel: 'gpt-4o-mini',
+    openAiPreferredModel: 'gpt-5o-mini',
     openAiKey: '',
     aiSummaryTargetLanguage: 'auto',
     enableDeepReading: false,
