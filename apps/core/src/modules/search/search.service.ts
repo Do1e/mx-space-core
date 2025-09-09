@@ -1,9 +1,4 @@
-import algoliasearch from 'algoliasearch'
-import removeMdCodeblock from 'remove-md-codeblock'
 import type { SearchResponse } from '@algolia/client-search'
-import type { SearchDto } from '~/modules/search/search.dto'
-import type { Pagination } from '~/shared/interface/paginator.interface'
-
 import {
   BadRequestException,
   forwardRef,
@@ -22,8 +17,6 @@ import { DatabaseService } from '~/processors/database/database.service'
 import type { Pagination } from '~/shared/interface/paginator.interface'
 import { transformDataToPaginate } from '~/transformers/paginate.transformer'
 import algoliasearch from 'algoliasearch'
-import type { SearchIndex } from 'algoliasearch'
-import { omit } from 'lodash'
 import removeMdCodeblock from 'remove-md-codeblock'
 import { ConfigsService } from '../configs/configs.service'
 import { NoteService } from '../note/note.service'
