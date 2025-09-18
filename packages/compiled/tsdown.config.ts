@@ -5,7 +5,7 @@ export default defineConfig({
   target: 'es2020',
   entry: ['index.ts', 'auth.ts', 'zod.ts', 'install-pkg.ts'],
   dts: true,
-  external: ['mongodb'],
+  external: ['mongodb', 'zod'],
   format: ['cjs'],
   platform: 'node',
   // banner: {
