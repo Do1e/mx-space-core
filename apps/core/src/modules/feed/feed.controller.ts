@@ -57,8 +57,14 @@ ${await Promise.all(
     )
     let summary = ''
     if (summaries.length) {
-      summary = `下述摘要由AI生成，请注意鉴别：${summaries[summaries.length - 1].summary}`
-    } else {
+      const zhSummary = summaries.findLast((s) => s.lang === 'zh')
+      const latestSummary = zhSummary || summaries.at(-1)
+      if (latestSummary) {
+        summary = `下述摘要由AI生成，请注意鉴别：${latestSummary.summary}`
+      }
+    }
+
+    if (!summary) {
       summary = RemoveMarkdown(renderResult.document.text).slice(0, 200)
     }
     return `<item>
